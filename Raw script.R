@@ -39,3 +39,7 @@ b
 c <- copredict(assn, iter = 100, n.indep = 6000000) # 6 million estimate based on Larsen et al. 2018 QRB
 
 c[[1]][1]*10
+
+gb %>% 
+  select(Host, Species) %>%
+  write_csv('~/Github/drosophily/GenBank_as_Edgelist.csv')

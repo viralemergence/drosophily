@@ -1,0 +1,118 @@
+---
+title: "How many insect viruses are there?"
+author: "Colin J. Carlson"
+date: "12/18/2020"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The core philosophy
+
+This is a back-of-the-envelope estimate of the global diversity of insect-infective viruses. It uses an approach developed by Carlson _et al._ (2019) _Nature Ecology and Evolution_, which was used at the time to estimate global viral diversity in mammals. That approach estimates total symbiont diversity by (1) generating a bipartite scaling curve from a host-symbiont association dataset, and extrapolating to a higher total number of hosts; then (2) using a more complete metagenomic dataset on one specific host species to correct for undersampling in the association data. For example, in that study, there are two species - a bat and a monkey - that have been fully inventoried. After using the HP3 dataset to estimate total mammal virus diversity, that number gets multiplied by 1 / (the proportion of monkey/bat viruses in HP3 out of all of their known viruses). 
+
+We're going to try the same thing here. On Twitter, [Eddie Holmes](https://twitter.com/edwardcholmes/status/1340091156185509888) said that _Drosophila melanogaster_ probably has the best-sampled insect virome. We're going to go to GenBank and use that to grab every named _D. melanogaster_ virus. That'll be our "complete" species. Then, we're going to use the `insectPathogen` package that Tad shared to generate our edgelist of insects and viruses, and use the `codependent` package I made in 2019 to estimate insect virus diversity. We'll use an estimate of ~6 million insects on Earth, based on:
+
+Larsen, Brendan B., et al. "Inordinate fondness multiplied and redistributed: the number of species on earth and the new pie of life." _The Quarterly Review of Biology_ 92.3 (2017): 229-265.
+
+## Some install
+
+If you need these packages, you can install both from Github. However, because `insectDisease` is still private, you'll need to clone it and install locally.
+
+```{r eval = FALSE}
+install.packages("~/Github/insectDisease", 
+                repos = NULL, type = 'source')
+
+devtools::install_github('cjcarlson/codependent')
+```
+
+You will also need to **unzip the file called GenBank_as_Edgelist.zip** before you go any further (yes, the file is too big for GitHub, no, I don't feel like solving that problem a responsible way in the first version of this).
+
+## Some loading
+
+```{r message = FALSE}
+library(codependent)
+library(InsectDisease)
+library(tidyverse)
+```
+
+## How many viruses does _Drosophila melanogaster_ have?
+
+```{r}
+setwd("~/Github/drosophily")
+
+gb <- read_csv('GenBank_as_Edgelist.csv')
+
+gb %>% 
+  filter(Host == 'Drosophila melanogaster') %>%
+  select(Host, Species) %>%
+  unique() -> dm
+
+dm %>%
+  nrow()
+
+dm %>% pull(Species)
+```
+
+There are about thirty viruses in the NCBI taxonomy that infect _D.m._
+
+## Bringing in the GenBank data
+
+Let's grab the insect virus data, and check _D. melanogaster_:
+
+```{r}
+id <- InsectDisease::viruses
+
+id %>% 
+  filter(Host == 'Drosophila melanogaster') %>%
+  pull(Virus)
+
+```
+
+Drosophila C virus and sigma virus are named, both in GenBank. Retrovirus (RTV) and reovirus-like particle are not; reovirus is probably equivalent to Drosophila reovirus, though. So let's say there are 3 viruses here compared to 30 in GenBank - that means we'll use a multiplication factor of 10.
+
+## Building the edgelist and curve
+
+Let's get a unique edgelist of hosts and vectors, and try building the scaling curve:
+
+```{r}
+
+id %>% 
+  select(Host, Virus) %>%
+  unique() -> assn
+
+b <- binera(assn, iter = 100, plots = TRUE)
+b 
+
+```
+
+Now let's try extrapolating:
+
+```{r}
+c <- copredict(assn, iter = 100, n.indep = 6000000)
+c
+```
+
+And finally, let's multiply by that correction factor:
+
+```{r}
+c[[1]][1]*10
+```
+
+If there are about 6 million insect species on Earth, there should be proportionally at least ~1.66 million viruses in insects.
+
+## Frequently asked questions
+
+**Q**: Carroll _et al._ (2018) _Science_ famously estimated there are 1.67 million viruses in mammals and waterfowl, which is a number you corrected in the 2019 _Nature Ecology and Evolution_ paper down to 40-60,000.
+
+**A**: Yes, I was there. That's not a question, really.
+
+**Q**: That 1.67 million viruses number is absurdly, weirdly close to 1.66 million insect viruses.
+
+**A**: Yeah, it is.
+
+**Q**: Does that mean anything?
+
+**A**: Absolutely not, but it's going to make for a ridiculous sentence in the abstract.
