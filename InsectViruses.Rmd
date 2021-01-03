@@ -24,9 +24,7 @@ Larsen, Brendan B., et al. "Inordinate fondness multiplied and redistributed: th
 If you need these packages, you can install both from Github. However, because `insectDisease` is still private, you'll need to clone it and install locally.
 
 ```{r eval = FALSE}
-install.packages("~/Github/insectDisease", 
-                repos = NULL, type = 'source')
-
+devtools::install_github('viralemergence/insectDisease')
 devtools::install_github('cjcarlson/codependent')
 ```
 
@@ -111,7 +109,7 @@ If there are about 6 million insect species on Earth, there should be proportion
 
 **A**: Yes, I was there. That's not a question, really.
 
-**Q**: That 1.67 million viruses number is absurdly, weirdly close to 1.66 million insect viruses.
+**Q**: That 1.67 million viruses number is absurdly, weirdly close to 1.67 million insect viruses.
 
 **A**: Yeah, it is.
 
